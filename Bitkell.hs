@@ -52,5 +52,12 @@ a <|||> b = foldl (\ i n -> i + (((get_nth_bit a n) <|||> (get_nth_bit b n)) <<<
 1 <&&&> 1 = 1
 a <&&&> b = foldl (\ i n -> i + (((get_nth_bit a n) <&&&> (get_nth_bit b n)) <<<> n)) 0 [0..31]
 
+
+-- Inverter
 (<!!!>) :: Int -> Int
 (<!!!>) a = 0xFFFFFFFF - a
+
+-- Some casting here
+cst32 = (<&&&>) 0xFFFFFFFF 
+cst16 = (<&&&>) 0xFFFF 
+cst8  = (<&&&>) 0xFF 
