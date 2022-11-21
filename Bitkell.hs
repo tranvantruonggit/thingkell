@@ -61,3 +61,23 @@ a <&&&> b = foldl (\ i n -> i + (((get_nth_bit a n) <&&&> (get_nth_bit b n)) <<<
 cst32 = (<&&&>) 0xFFFFFFFF 
 cst16 = (<&&&>) 0xFFFF 
 cst8  = (<&&&>) 0xFF 
+
+-- Create some masking
+msk_lsb val bits = val <&&&> ( 0xFFFFFFFF <>>> ( 32 - bits))
+
+-- test bit
+tst_nth_bit x n =  1 <&&&> ($) (<>>>) x n 
+
+-- Reflect bit
+reflect_byte n =  foldl ( \ i x -> i + ((1<<<>x)*tst_nth_bit n (7-x))) 0 [0..7]
+reflect_word n =  foldl ( \ i x -> i + ((1<<<>x)*tst_nth_bit n (15-x))) 0 [0..15]
+reflect_dword n =  foldl ( \ i x -> i + ((1<<<>x)*tst_nth_bit n (31-x))) 0 [0..31]
+
+(<&|&>) :: Int -> Int
+(<&|&>) x = reflect_byte x
+
+(<&&|&&>) :: Int -> Int
+(<&&|&&>) x = reflect_word x
+
+(<&&&|&&&>) :: Int -> Int
+(<&&&|&&&>) x = reflect_dword x
