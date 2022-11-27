@@ -1,4 +1,5 @@
 module Bitkell where
+import Ffi
 -- This file containing the equivalent bit operation in C, written using pure haskell implementation. The purpose of reinvent-the-wheel is to learing the language.
 
 -- This library assume the interger to be 32 if not mentioned other parametes. Otherwise, it will have the prefix is the function
@@ -28,11 +29,7 @@ get_nth_bit num n = get_nth_bit ( num <>>> n) 0
 --XOR operation
 (<^>):: Int -> Int -> Int
 
-0 <^> 0 = 0
-0 <^> 1 = 1
-1 <^> 0 = 1
-1 <^> 1 = 0
-a <^> b = foldl (\ i n -> i + (((get_nth_bit a n) <^> (get_nth_bit b n)) <<<> n)) 0 [0..31]
+a <^> b = thk_xor32 a b
 
 -- OR bit wise operation
 (<|||>):: Int -> Int -> Int
@@ -46,11 +43,7 @@ a <|||> b = foldl (\ i n -> i + (((get_nth_bit a n) <|||> (get_nth_bit b n)) <<<
 -- OR bit wise operation
 (<&&&>):: Int -> Int -> Int
 
-0 <&&&> 0 = 0
-0 <&&&> 1 = 0
-1 <&&&> 0 = 0
-1 <&&&> 1 = 1
-a <&&&> b = foldl (\ i n -> i + (((get_nth_bit a n) <&&&> (get_nth_bit b n)) <<<> n)) 0 [0..31]
+a <&&&> b = thk_and32 a b
 
 
 -- Inverter
