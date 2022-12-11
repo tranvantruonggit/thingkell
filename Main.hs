@@ -56,7 +56,7 @@ main = do
    --print $ map ((<&&&>) 0xff) [0..0xfff]
 -}
    --let testdata = map ((<&&&>) 0xff) [0..0x1FFE]
-   let testdata = map ((<&&&>) 0xff) [0..0x7FFFFF]
+   let testdata = map ((<&&&>) 0xff) [0..0x1FFFFF]
    putStrLn "Starting..."
    time $ print $ int_2_hexstr $ crc_cal 0x4C11DB8  0xFFFFFFFF 0xFFFFFFFF False False testdata
    putStrLn "Done."

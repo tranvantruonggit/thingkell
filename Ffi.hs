@@ -5,11 +5,22 @@ import Foreign.C.Types
 
 foreign import ccall "bit_utils.h weird_adder" weird_adder :: Int -> Int -> Int
 --Xor
-foreign import ccall "thk_xor32" thk_xor32 :: Int -> Int-> Int
-foreign import ccall "thk_xor16" thk_xor16 :: Int -> Int-> Int
-foreign import ccall "thk_xor8" thk_xor8 :: Int -> Int-> Int
+foreign import ccall "bit_utils.h thk_xor32" thk_xor32 :: Int -> Int-> Int
+foreign import ccall "bit_utils.h thk_xor16" thk_xor16 :: Int -> Int-> Int
+foreign import ccall "bit_utils.h thk_xor8" thk_xor8 :: Int -> Int-> Int
 
-foreign import ccall "thk_and32" thk_and32 :: Int -> Int-> Int
-foreign import ccall "thk_and16" thk_and16 :: Int -> Int-> Int
-foreign import ccall "thk_and8" thk_and8 :: Int -> Int-> Int
+--Or
+foreign import ccall "bit_utils.h thk_or32" thk_or32 :: Int -> Int-> Int
+
+--And
+foreign import ccall "bit_utils.h thk_and32" thk_and32 :: Int -> Int-> Int
+foreign import ccall "bit_utils.h thk_and16" thk_and16 :: Int -> Int-> Int
+foreign import ccall "bit_utils.h thk_and8" thk_and8 :: Int -> Int-> Int
+
+--left shift/rightshift
+foreign import ccall "bit_utils.h thk_shl" thk_shl :: Int -> Int-> Int
+foreign import ccall "bit_utils.h thk_shr" thk_shr :: Int -> Int-> Int
+
+--test bit
+foreign import ccall "bit_utils.h thk_tstb" thk_tstb :: Int -> Int-> Int
 

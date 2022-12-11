@@ -62,3 +62,4 @@ hexsplit (x:y:xs)  = [[x]++[y]]++ hexsplit xs
 hexsplit (x:[])  = [[x]++"0"]
 hexs_2_u8list = map hexs_2_u8 . hexsplit
 
+-- Function to convert the hex
