@@ -25,3 +25,8 @@ extern uint32_t thk_shr( uint32_t a, uint8_t b);
 /* Get nth bit */
 extern uint32_t thk_tstb( uint32_t val, uint8_t pos);
 
+/* Bit reflect */
+extern uint32_t thk_bit_reflect8( uint8_t val );
+extern uint32_t thk_bit_reflect16( uint16_t val );
+extern uint32_t thk_bit_reflect32( uint32_t val );
+

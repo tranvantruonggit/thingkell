@@ -43,7 +43,7 @@ a <&&&> b = thk_and32 a b
 
 -- Inverter
 (<!!!>) :: Int -> Int
-(<!!!>) a = 0xFFFFFFFF - a
+(<!!!>)  =  thk_inv32 
 
 -- Some casting here
 cst32 = (<&&&>) 0xFFFFFFFF 

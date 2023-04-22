@@ -1,3 +1,4 @@
+{-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE OverloadedStrings  #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE QuasiQuotes #-}
@@ -60,4 +61,3 @@ main = do
    putStrLn "Starting..."
    time $ print $ int_2_hexstr $ crc_cal 0x4C11DB8  0xFFFFFFFF 0xFFFFFFFF False False testdata
    putStrLn "Done."
-   print $ weird_adder 1 2
