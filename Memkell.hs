@@ -67,7 +67,7 @@ take n Nothing = Nothing
 take n (Just sect) = if (n<= getMemsecLen (Just sect))
                     then Just MemSect { addr = addr sect,
                                         byteArr = Prelude.take n (byteArr sect) }
-                    else padMem (Just sect) n
+                    else (Just sect)
 
 -- Function to remove the first n byte from memory section
 drop :: Int -> Maybe MemSect -> Maybe MemSect
