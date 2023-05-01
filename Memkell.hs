@@ -1,6 +1,8 @@
 module Memkell where
 import Data.Monoid
+import Data.Bool
 import Data.Maybe (catMaybes)
+import Data.Maybe (listToMaybe)
 
 -- Mem section 
 data MemSect = MemSect {
@@ -103,11 +105,24 @@ split2blocks (x:[]) = [x]
 split2blocks (x:xs) = [x]++ (split2block' n (last ( xs))) where 
                         n =  getMemsecLen  x 
 
+-- FUnction to slit the memmory section into smaller section of n bytes
 split:: Int -> Maybe MemSect -> [Maybe MemSect]
-
 split n Nothing = []
-
-
 split n (Just sect) = split2blocks $ split2block' n (Just sect)
+
+
+isPerfectMemsectPair :: (Maybe MemSect, Maybe MemSect)-> Bool
+isPerfectMemsectPair (Nothing,_) = True
+isPerfectMemsectPair (_,Nothing) = True
+isPerfectMemsectPair ((Just x1), (Just x2))= if ((getStartAddr (Just x2)) - getStartAddr (Just x1)) == getMemsecLen (Just x1)
+                                                then True
+                                                else False
+                                                
+pairs :: [a] -> [(a,a)]
+
+pairs xs = zip xs (tail xs)
+-- Function to check if the MemSect array is perfect. Perfect mean there is no memhole
+isPerfectMemSectArr :: [Maybe MemSect] -> Bool
+isPerfectMemSectArr xs = foldr (\pair acc -> isPerfectMemsectPair pair && acc) True (pairs xs)
 
 
