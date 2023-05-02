@@ -1,4 +1,5 @@
 module Ihex where
+import Memkell
 import Data.Maybe (catMaybes)
 import Data.Maybe (fromJust)
 import Data.List.Split
@@ -41,6 +42,26 @@ makeIntelHexRecord_Ext addr = Just IntelHexRecord{
     ihexRecordType = 2
 }
 
+makeListOfRecord ::  Int -> [Int] -> [IntelHexRecord]
+makeListOfRecord startAddr dataArray = let
+        data_seg =  chunksOf 16 dataArray
+        addr_arr = map (\x -> x*16 +startAddr ) [0..(length data_seg)]
+        zipped_arr = if length (addr_arr) == length (data_seg)
+                        then zip addr_arr data_seg
+                        else []
+    in map (makeDIhexRecord')   zipped_arr
+
+makeDIhexRecord' :: (Int, [Int]) -> IntelHexRecord
+makeDIhexRecord' (addr, dat) = 
+    case makeDIhexRecord addr dat of
+        Just r -> r
+        Nothing -> error "Errror"
+
+makeDIhexRecord :: Int->[Int]-> Maybe IntelHexRecord
+makeDIhexRecord addr dat = 
+    if (length dat) <=16
+        then  makeIntelHexRecord (addr <&&&> 0xFFFF) dat 0
+        else  Nothing
 
 makeDIhexRecords :: Int -> [Int] -> [IntelHexRecord]
 makeDIhexRecords addr dat = 
@@ -54,4 +75,20 @@ makeIhexRecords addr dat =
     ret where
         ret =   (catMaybes [makeIntelHexRecord_Ext addr]) ++ dRecord where 
             dRecord = makeDIhexRecords addr dat
-        
+
+-- This funcion parsing perfect memory section into the intel hex record, the provided input is the base address
+recordFromMemSect_elem:: Int -> Maybe MemSect -> Maybe IntelHexRecord
+recordFromMemSect_elem _ Nothing = Nothing
+
+recordFromMemSect_elem base (Just sect) = if getMemsecLen (Just sect) <= 16
+                                            then makeIntelHexRecord (getStartAddr (Just sect) - base    ) (byteArr sect) 0
+                                            else error "Helllo this"
+
+-- Function to parse the record to the intex hex record
+recordFromMemSect:: Maybe MemSect -> [Maybe IntelHexRecord]
+recordFromMemSect Nothing = []
+recordFromMemSect (Just sect) = [ext]++dataArr where
+    ext = makeIntelHexRecord_Ext $ getStartAddr (Just sect) <>>> 16
+    dataArr = map (\x -> recordFromMemSect_elem 16 x) ( splitAlign 4 (Just sect))
+
+

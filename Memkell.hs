@@ -3,6 +3,7 @@ import Data.Monoid
 import Data.Bool
 import Data.Maybe (catMaybes)
 import Data.Maybe (listToMaybe)
+import Bitkell
 
 -- Mem section 
 data MemSect = MemSect {
@@ -63,6 +64,16 @@ concatSect sect Nothing = Nothing
 concatSect (Just sect1) (Just sect2) = if (addr sect1) >(addr sect2)
                             then concatSect (Just sect2) (Just sect1)
                             else perfectConcatSect (padMemUntil (Just sect1) (addr sect2)) (Just sect2)
+
+-- function that the memory untill the specific address
+takeUntil:: Int -> Maybe MemSect -> Maybe MemSect
+takeUntil _ Nothing = Nothing
+takeUntil nextAddr (Just sect) = Memkell.take (nextAddr - getStartAddr (Just sect)) (Just sect)
+
+dropUntil :: Int -> Maybe MemSect -> Maybe MemSect
+dropUntil _ Nothing = Nothing
+dropUntil nextAddr (Just sect) = Memkell.drop (nextAddr - getStartAddr (Just sect)) (Just sect)
+
 --Function to take n byte from beginning remove the rest
 take :: Int -> Maybe MemSect -> Maybe MemSect
 take n Nothing = Nothing
@@ -118,11 +129,29 @@ isPerfectMemsectPair ((Just x1), (Just x2))= if ((getStartAddr (Just x2)) - getS
                                                 then True
                                                 else False
                                                 
-pairs :: [a] -> [(a,a)]
 
-pairs xs = zip xs (tail xs)
 -- Function to check if the MemSect array is perfect. Perfect mean there is no memhole
 isPerfectMemSectArr :: [Maybe MemSect] -> Bool
 isPerfectMemSectArr xs = foldr (\pair acc -> isPerfectMemsectPair pair && acc) True (pairs xs)
+    where -- THe pairs in this function is the pair of consecutive adjacent pair. For instance, the array with value 1-> 5 will produce 1-2, 2-3, 3-4, 4-5
+        pairs :: [a] -> [(a,a)]
+        pairs xs = zip xs (tail xs)
+
+-- Function to split the memory section into the array of perfectly aligned memory section, filling all the mem holes, the first argument is the number of bit to be align
+splitAlign:: Int -> Maybe MemSect -> [Maybe MemSect]
+
+splitAlign  _ Nothing = []
+
+splitAlign 0 (Just x) = [Just x]
+
+splitAlign bits (Just x) = do 
+    let alignMaskLow = (1 <<<> bits) - 1
+        alignMaskHigh = 0xFFFFFFFF - alignMaskLow
+        chunkSize = alignMaskLow + 1
+        nextAlignedAddr = getStartAddr (Just x) + (chunkSize - (alignMaskLow <&&&> getStartAddr (Just x)))
+    if (getStartAddr (Just x) ) <&&&> alignMaskLow > 0
+        then [takeUntil nextAlignedAddr (Just x)]  ++ Memkell.split chunkSize (Memkell.dropUntil nextAlignedAddr (Just x))
+        else Memkell.split chunkSize (Just x)
+    
 
 
