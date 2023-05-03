@@ -22,6 +22,16 @@ int_2_hexstr 15 = "F"
 -- convert integer number to hex string
 int_2_hexstr n = (int_2_hexstr  (div n 16)) ++ (int_2_hexstr (mod n 16))
 
+int_2_hexstr_padding':: Int -> Int -> String
+
+int_2_hexstr_padding' n 0 = int_2_hexstr n
+
+int_2_hexstr_padding' n leading = "0" ++ int_2_hexstr_padding' n (leading - 1)
+
+int_2_hexstr_padding n leading = if leading >= (length $ int_2_hexstr n)
+                                    then int_2_hexstr_padding' n (leading - (length $ int_2_hexstr n))
+                                    else int_2_hexstr n
+
 -- Convert hex number to uintX number
 hexch_2_u8 :: Char -> Int
 hexch_2_u8 '0' = 0 

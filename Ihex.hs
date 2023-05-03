@@ -10,6 +10,8 @@ import Data.ByteString.Char8 (ByteString, pack)
 import Data.Attoparsec.ByteString.Char8 (Parser, parseOnly, char, count, hexadecimal)
 import qualified Data.ByteString.Char8 as BS
 import Bitkell
+import Data.String
+import Hexkell
 
 data IntelHexRecord = IntelHexRecord {
     ihexAddress :: Int,     -- The starting address of the data
@@ -90,5 +92,14 @@ recordFromMemSect Nothing = []
 recordFromMemSect (Just sect) = [ext]++dataArr where
     ext = makeIntelHexRecord_Ext $ getStartAddr (Just sect) <>>> 16
     dataArr = map (\x -> recordFromMemSect_elem 16 x) ( splitAlign 4 (Just sect))
+
+serializeRecord:: Maybe IntelHexRecord -> String
+serializeRecord Nothing = error "Not the valid record"
+
+serializeRecord (Just record) = (":"++len++rectype++dataArr++checksum) where
+        len = int_2_hexstr_padding (length (ihexData record)) 2
+        rectype = (int_2_hexstr_padding (ihexRecordType record) 2)
+        dataArr = foldl (\i x -> i++x) [] (map (\x -> int_2_hexstr_padding x 2) (ihexData record))
+        checksum = "00"
 
 
