@@ -8,7 +8,7 @@ import Numeric (readHex)
 import qualified Data.ByteString as B
 import Data.ByteString.Char8 (ByteString, pack)
 import Data.Attoparsec.ByteString.Char8 (Parser, parseOnly, char, count, hexadecimal)
-import qualified Data.ByteString.Char8 as BS
+import qualified Data.ByteString.Char8 as BS    
 import Bitkell
 import Data.String
 import Hexkell
@@ -96,7 +96,7 @@ recordFromMemSect (Just sect) = [ext]++dataArr where
 serializeRecord:: Maybe IntelHexRecord -> String
 serializeRecord Nothing = []
 
-serializeRecord (Just record) = prefix_record++checksum where
+serializeRecord (Just record) = prefix_record++checksum++"\n" where
         prefix_record = ":"++len++rectype++dataArr
         len = int_2_hexstr_padding 2 $ length $ ihexData record
         rectype = int_2_hexstr_padding 2 $ ihexRecordType record
