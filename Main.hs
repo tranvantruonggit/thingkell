@@ -51,7 +51,7 @@ main = do
    let x1 = Just MemSect {addr = 0x8000, byteArr = [1,2,3,4]}
    let x2 = Just MemSect {addr = 0x8004, byteArr = [0..(0xFFF)]}
    let x3 = Just MemSect {addr = 0x9004, byteArr = [1..65536]}
-   let x4 = MemSect {addr = 0x800E  , byteArr = [0..(33)]}
+   let x4 = MemSect {addr = 0x1234800E  , byteArr = [0..(33)]}
    print $ isPerfectMemsectPair (Nothing,Nothing)
    print $ isPerfectMemsectPair (x1,x2)
    print $ isPerfectMemSectArr [x1,x2]
@@ -63,6 +63,8 @@ main = do
    print $ recordFromMemSect_elem 0x800E $ head ( splitAlign 4 (Just x4))
    print $ serializeRecord $ recordFromMemSect_elem 0x800E $ head ( splitAlign 4 (Just x4))
    print $ map serializeRecord (recordFromMemSect $ (Just x4))
-   print $ int_2_hexstr_padding 0x1234 3
-   
+   print $ int_2_hexstr_padding 3 0x1234
+   let str1 = map serializeRecord (recordFromMemSect $ (Just x4))
+   let str2 =  foldl (++) [] str1
+   putStr str2
    

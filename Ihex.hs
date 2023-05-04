@@ -39,9 +39,9 @@ makeIntelHexRecord addr dat rtype = Just IntelHexRecord {
 -- provide the full address, but take only 16 MSBs of the address
 makeIntelHexRecord_Ext :: Int -> Maybe IntelHexRecord
 makeIntelHexRecord_Ext addr = Just IntelHexRecord{
-    ihexAddress = addr <>>> 16,
-    ihexData = [],
-    ihexRecordType = 2
+    ihexAddress = 0,
+    ihexData =  [addr <>>> 24] ++ [ (addr <>>> 16) <&&&> 0xFF],
+    ihexRecordType = 4
 }
 
 makeListOfRecord ::  Int -> [Int] -> [IntelHexRecord]
@@ -90,19 +90,24 @@ recordFromMemSect_elem base (Just sect) = if getMemsecLen (Just sect) <= 16
 recordFromMemSect:: Maybe MemSect -> [Maybe IntelHexRecord]
 recordFromMemSect Nothing = []
 recordFromMemSect (Just sect) = [ext]++dataArr where
-    ext = makeIntelHexRecord_Ext $ getStartAddr (Just sect) <>>> 16
-    dataArr = map (\x -> recordFromMemSect_elem 16 x) $ splitAlign 4 $ Just sect
+    ext = makeIntelHexRecord_Ext  $baseAddr
+    dataArr = map (\x -> recordFromMemSect_elem baseAddr x) $ splitAlign 4 $ Just sect
+    baseAddr = getStartAddr (Just sect) <&&&> 0xFFFF0000
 
 serializeRecord:: Maybe IntelHexRecord -> String
 serializeRecord Nothing = []
 
 serializeRecord (Just record) = prefix_record++checksum++"\n" where
-        prefix_record = ":"++len++rectype++dataArr
+        prefix_record = ":"++len++address++rectype++dataArr
         len = int_2_hexstr_padding 2 $ length $ ihexData record
         rectype = int_2_hexstr_padding 2 $ ihexRecordType record
         dataArr = foldl (\i x -> i++x) [] $ map (\x -> int_2_hexstr_padding 2 x) $ ihexData record
         -- split the prefix record into list of u8 list, then sum all the value. The checksum is the 2's complement of the checksum'
         checksum' = foldl (+) 0 $ hexs_2_u8list $tail prefix_record
         checksum =  int_2_hexstr_padding 2 $ (0-checksum') <&&&> 0xFF
+        address = case rectype of
+            "00"->int_2_hexstr_padding 4 $ihexAddress record
+            "02"->int_2_hexstr_padding 4 0
+            "04"->int_2_hexstr_padding 4 0
 
 

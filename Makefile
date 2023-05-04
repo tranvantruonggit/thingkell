@@ -1,7 +1,8 @@
 all: main.hs
-	ghc main.hs bit_utils.c
+	ghc main.hs bit_utils.c -no-keep-hi-files -no-keep-o-files 
 
 run: all
+	clear
 	./main
 
 .PHONY: clean
