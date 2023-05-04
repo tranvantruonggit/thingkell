@@ -94,7 +94,7 @@ recordFromMemSect (Just sect) = [ext]++dataArr where
     dataArr = map (\x -> recordFromMemSect_elem 16 x) ( splitAlign 4 (Just sect))
 
 serializeRecord:: Maybe IntelHexRecord -> String
-serializeRecord Nothing = error "Not the valid record"
+serializeRecord Nothing = []
 
 serializeRecord (Just record) = (":"++len++rectype++dataArr++checksum) where
         len = int_2_hexstr_padding (length (ihexData record)) 2
