@@ -84,22 +84,25 @@ recordFromMemSect_elem _ Nothing = Nothing
 
 recordFromMemSect_elem base (Just sect) = if getMemsecLen (Just sect) <= 16
                                             then makeIntelHexRecord (getStartAddr (Just sect) - base    ) (byteArr sect) 0
-                                            else error "Helllo this"
+                                            else error "error from recordFromMemSect_elem"
 
 -- Function to parse the record to the intex hex record
 recordFromMemSect:: Maybe MemSect -> [Maybe IntelHexRecord]
 recordFromMemSect Nothing = []
 recordFromMemSect (Just sect) = [ext]++dataArr where
     ext = makeIntelHexRecord_Ext $ getStartAddr (Just sect) <>>> 16
-    dataArr = map (\x -> recordFromMemSect_elem 16 x) ( splitAlign 4 (Just sect))
+    dataArr = map (\x -> recordFromMemSect_elem 16 x) $ splitAlign 4 $ Just sect
 
 serializeRecord:: Maybe IntelHexRecord -> String
 serializeRecord Nothing = []
 
-serializeRecord (Just record) = (":"++len++rectype++dataArr++checksum) where
-        len = int_2_hexstr_padding (length (ihexData record)) 2
-        rectype = (int_2_hexstr_padding (ihexRecordType record) 2)
-        dataArr = foldl (\i x -> i++x) [] (map (\x -> int_2_hexstr_padding x 2) (ihexData record))
-        checksum = "00"
+serializeRecord (Just record) = prefix_record++checksum where
+        prefix_record = ":"++len++rectype++dataArr
+        len = int_2_hexstr_padding 2 $ length $ ihexData record
+        rectype = int_2_hexstr_padding 2 $ ihexRecordType record
+        dataArr = foldl (\i x -> i++x) [] $ map (\x -> int_2_hexstr_padding 2 x) $ ihexData record
+        -- split the prefix record into list of u8 list, then sum all the value. The checksum is the 2's complement of the checksum'
+        checksum' = foldl (+) 0 $ hexs_2_u8list $tail prefix_record
+        checksum =  int_2_hexstr_padding 2 $ (0-checksum') <&&&> 0xFF
 
 

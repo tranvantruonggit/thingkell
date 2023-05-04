@@ -28,7 +28,7 @@ int_2_hexstr_padding' n 0 = int_2_hexstr n
 
 int_2_hexstr_padding' n leading = "0" ++ int_2_hexstr_padding' n (leading - 1)
 
-int_2_hexstr_padding n leading = if leading >= (length $ int_2_hexstr n)
+int_2_hexstr_padding leading n  = if leading >= (length $ int_2_hexstr n)
                                     then int_2_hexstr_padding' n (leading - (length $ int_2_hexstr n))
                                     else int_2_hexstr n
 
