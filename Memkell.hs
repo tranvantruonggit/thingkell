@@ -3,6 +3,7 @@ import Data.Monoid
 import Data.Bool
 import Data.Maybe (catMaybes)
 import Data.Maybe (listToMaybe)
+import Data.List (unfoldr)
 import Bitkell
 
 -- Mem section 
@@ -116,10 +117,22 @@ split2blocks (x:[]) = [x]
 split2blocks (x:xs) = [x]++ (split2block' n (last ( xs))) where 
                         n =  getMemsecLen  x 
 
+chunksOfMem :: Int -> Maybe MemSect -> [Maybe MemSect]
+chunksOfMem _ Nothing = []
+chunksOfMem n (Just (MemSect addr byteArr)) =
+  let chunkData = unfoldr (splitAtMaybe n) byteArr
+      chunkAddrs = scanl (+) addr (map length chunkData)
+  in zipWith (\a b -> Just (MemSect a b))  chunkAddrs chunkData
+
+splitAtMaybe :: Int -> [a] -> Maybe ([a], [a])
+splitAtMaybe _ [] = Nothing
+splitAtMaybe n xs = Just $ splitAt n xs
+
+
 -- FUnction to slit the memmory section into smaller section of n bytes
 split:: Int -> Maybe MemSect -> [Maybe MemSect]
 split n Nothing = []
-split n (Just sect) = split2blocks $ split2block' n (Just sect)
+split n (Just sect) = chunksOfMem n (Just sect)
 
 
 isPerfectMemsectPair :: (Maybe MemSect, Maybe MemSect)-> Bool
