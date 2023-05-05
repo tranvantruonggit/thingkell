@@ -94,9 +94,9 @@ recordFromMemSect (Just sect) = [ext]++dataArr where
     dataArr = map (\x -> recordFromMemSect_elem baseAddr x) $ splitAlign 4 $ Just sect
     baseAddr = getStartAddr (Just sect) <&&&> 0xFFFF0000
 
+-- This function parse the Intel HEX record to the correct format
 serializeRecord:: Maybe IntelHexRecord -> String
 serializeRecord Nothing = []
-
 serializeRecord (Just record) = prefix_record++checksum++"\n" where
         prefix_record = ":"++len++address++rectype++dataArr
         len = int_2_hexstr_padding 2 $ length $ ihexData record
@@ -110,4 +110,10 @@ serializeRecord (Just record) = prefix_record++checksum++"\n" where
             "02"->int_2_hexstr_padding 4 0
             "04"->int_2_hexstr_padding 4 0
 
+-- Function that convert the memory section in to segment of hex records
+mem2Hex :: Maybe MemSect -> String
+
+mem2Hex Nothing = []
+
+mem2Hex (Just sect) = foldl (++) [] $ map serializeRecord $ concat $ map (recordFromMemSect) $ splitAlign 16 $ Just sect
 
