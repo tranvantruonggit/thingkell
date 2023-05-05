@@ -51,14 +51,18 @@ main = do
    let x1 = Just MemSect {addr = 0x8000, byteArr = [1,2,3,4]}
    let x2 = Just MemSect {addr = 0x8004, byteArr = [0..(0xFFF)]}
    let x3 = Just MemSect {addr = 0x9004, byteArr = [1..65536]}
-   let x4 = MemSect {addr = 0x12347FFE , byteArr = map (<&&&> 0xFF) [1..(145570)]}
+   let x4 = MemSect {addr = 0x12347FFE , byteArr = map (<&&&> 0xFF) [1..(10000000)]}
+   --print x4
    print $ isPerfectMemsectPair (Nothing,Nothing)
    print $ isPerfectMemsectPair (x1,x2)
    print $ isPerfectMemSectArr [x1,x2]
    print $ isPerfectMemSectArr [x1,x2,x3]
+   print $ "Start split align"
    print "$ splitAlign 4 (Just x4)"
-   --print $ splitAlign 4 (Just x4)
-   print "$ recordFromMemSect (Just x4)"
+   --time $ print $ splitAlign 16  (Just x4)
+   print $ "End split algin "
+   --print $ 
+   --print "$ recordFromMemSect (Just x4)"
   -- print $ recordFromMemSect (Just x4)
    print $ "Hello"
    --print $ recordFromMemSect_elem 0x800E $ head ( splitAlign 4 (Just x4))
@@ -68,7 +72,11 @@ main = do
    let str1 = map serializeRecord $ concat $ map (recordFromMemSect) ( splitAlign 16 (Just x4))
    let str2 =  foldl (++) [] str1
    let str3 = mem2Hex $ Just x4
+   
+   --time $ print str3
    --putStr str2
    let file = "output.hex"
-   writeFile file str3
+   print $ "Start writing file"
+   time $ writeFile file str3
+   print $ "End writting file"
    

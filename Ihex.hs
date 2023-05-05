@@ -12,6 +12,11 @@ import qualified Data.ByteString.Char8 as BS
 import Bitkell
 import Data.String
 import Hexkell
+import Control.Parallel.Strategies (using,parMap, rseq,parList,NFData,evalList)
+import Control.Parallel ( pseq)
+
+quickmap :: NFData b => (a -> b) -> [a] -> [b]
+quickmap f xs = (map f xs) `using` parList rseq `using` evalList rseq
 
 data IntelHexRecord = IntelHexRecord {
     ihexAddress :: Int,     -- The starting address of the data
@@ -89,10 +94,18 @@ recordFromMemSect_elem base (Just sect) = if getMemsecLen (Just sect) <= 16
 -- Function to parse the record to the intex hex record
 recordFromMemSect:: Maybe MemSect -> [Maybe IntelHexRecord]
 recordFromMemSect Nothing = []
-recordFromMemSect (Just sect) = [ext]++dataArr where
+recordFromMemSect (Just sect) = [ext]++ dataArr where
     ext = makeIntelHexRecord_Ext  $baseAddr
     dataArr = map (\x -> recordFromMemSect_elem baseAddr x) $ splitAlign 4 $ Just sect
     baseAddr = getStartAddr (Just sect) <&&&> 0xFFFF0000
+    
+optimizedMemSect2Hex :: Maybe MemSect -> String
+optimizedMemSect2Hex Nothing = []
+optimizedMemSect2Hex (Just sect) = ext++ (concat dataArr) where
+    ext = serializeRecord.makeIntelHexRecord_Ext  $baseAddr
+    dataArr = map (\x -> serializeRecord (recordFromMemSect_elem baseAddr x)) $ splitAlign 4 $ Just sect
+    baseAddr = getStartAddr (Just sect) <&&&> 0xFFFF0000
+
 
 -- This function parse the Intel HEX record to the correct format
 serializeRecord:: Maybe IntelHexRecord -> String
@@ -101,19 +114,19 @@ serializeRecord (Just record) = prefix_record++checksum++"\n" where
         prefix_record = ":"++len++address++rectype++dataArr
         len = int_2_hexstr_padding 2 $ length $ ihexData record
         rectype = int_2_hexstr_padding 2 $ ihexRecordType record
-        dataArr = foldl (\i x -> i++x) [] $ map (\x -> int_2_hexstr_padding 2 x) $ ihexData record
+        dataArr = foldl (++) [] $ quickmap (\x -> int_2_hexstr_padding 2 x) $ ihexData record
+        address = case ihexRecordType record of
+            0->int_2_hexstr_padding 4 $ihexAddress record
+            2->int_2_hexstr_padding 4 0
+            4->int_2_hexstr_padding 4 0
         -- split the prefix record into list of u8 list, then sum all the value. The checksum is the 2's complement of the checksum'
         checksum' = foldl (+) 0 $ hexs_2_u8list $tail prefix_record
         checksum =  int_2_hexstr_padding 2 $ (0-checksum') <&&&> 0xFF
-        address = case rectype of
-            "00"->int_2_hexstr_padding 4 $ihexAddress record
-            "02"->int_2_hexstr_padding 4 0
-            "04"->int_2_hexstr_padding 4 0
 
 -- Function that convert the memory section in to segment of hex records
 mem2Hex :: Maybe MemSect -> String
 
 mem2Hex Nothing = []
 
-mem2Hex (Just sect) = foldl (++) [] $ map serializeRecord $ concat $ map (recordFromMemSect) $ splitAlign 16 $ Just sect
+mem2Hex (Just sect) = foldl (++) [] $ map (optimizedMemSect2Hex) $ splitAlign 16 $ Just sect
 

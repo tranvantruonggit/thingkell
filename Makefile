@@ -1,9 +1,9 @@
 all: main.hs
-	ghc main.hs bit_utils.c -no-keep-hi-files -no-keep-o-files 
+	ghc -threaded -O2 -rtsopts main.hs bit_utils.c -no-keep-hi-files -no-keep-o-files 
 
 run: all
 	clear
-	./main
+	./main +RTS
 
 .PHONY: clean
 
