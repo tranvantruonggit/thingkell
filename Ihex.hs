@@ -14,13 +14,11 @@ import Data.String
 import Hexkell
 import Control.Parallel.Strategies (using,parMap, rseq,parList,NFData,evalList)
 import Control.Parallel ( pseq)
-
-quickmap :: NFData b => (a -> b) -> [a] -> [b]
-quickmap f xs = (map f xs) `using` parList rseq `using` evalList rseq
+import Data.Word
 
 data IntelHexRecord = IntelHexRecord {
     ihexAddress :: Int,     -- The starting address of the data
-    ihexData :: [Int],      -- The data itself
+    ihexData :: [Word8],      -- The data itself
     ihexRecordType :: Int   -- The record type (0, 1, or 2)
 } deriving(Show)
 
@@ -34,7 +32,7 @@ data IntelHexRecord = IntelHexRecord {
 --    " }"
 
 -- Constructor of Intel Hexrecord
-makeIntelHexRecord :: Int -> [Int] -> Int -> Maybe IntelHexRecord
+makeIntelHexRecord :: Int -> [Word8] -> Int -> Maybe IntelHexRecord
 makeIntelHexRecord addr dat rtype = Just IntelHexRecord {
     ihexAddress = addr,
     ihexData = dat,
@@ -45,11 +43,11 @@ makeIntelHexRecord addr dat rtype = Just IntelHexRecord {
 makeIntelHexRecord_Ext :: Int -> Maybe IntelHexRecord
 makeIntelHexRecord_Ext addr = Just IntelHexRecord{
     ihexAddress = 0,
-    ihexData =  [addr <>>> 24] ++ [ (addr <>>> 16) <&&&> 0xFF],
+    ihexData =  [fromIntegral(addr <>>> 24)] ++ [fromIntegral ( (addr <>>> 16) <&&&> 0xFF)],
     ihexRecordType = 4
 }
 
-makeListOfRecord ::  Int -> [Int] -> [IntelHexRecord]
+makeListOfRecord ::  Int -> [Word8] -> [IntelHexRecord]
 makeListOfRecord startAddr dataArray = let
         data_seg =  chunksOf 16 dataArray
         addr_arr = map (\x -> x*16 +startAddr ) [0..(length data_seg)]
@@ -58,26 +56,26 @@ makeListOfRecord startAddr dataArray = let
                         else []
     in map (makeDIhexRecord')   zipped_arr
 
-makeDIhexRecord' :: (Int, [Int]) -> IntelHexRecord
+makeDIhexRecord' :: (Int, [Word8]) -> IntelHexRecord
 makeDIhexRecord' (addr, dat) = 
     case makeDIhexRecord addr dat of
         Just r -> r
         Nothing -> error "Errror"
 
-makeDIhexRecord :: Int->[Int]-> Maybe IntelHexRecord
+makeDIhexRecord :: Int->[Word8]-> Maybe IntelHexRecord
 makeDIhexRecord addr dat = 
     if (length dat) <=16
         then  makeIntelHexRecord (addr <&&&> 0xFFFF) dat 0
         else  Nothing
 
-makeDIhexRecords :: Int -> [Int] -> [IntelHexRecord]
+makeDIhexRecords :: Int -> [Word8] -> [IntelHexRecord]
 makeDIhexRecords addr dat = 
     if (length dat) <=16
         then [  fromJust (makeIntelHexRecord (addr <&&&> 0xFFFF) dat 0)]
         else [  fromJust  (makeIntelHexRecord (addr <&&&> 0xFFFF) dat 1)]
 
 
-makeIhexRecords :: Int -> [Int] -> [IntelHexRecord]
+makeIhexRecords :: Int -> [Word8] -> [IntelHexRecord]
 makeIhexRecords addr dat = 
     ret where
         ret =   (catMaybes [makeIntelHexRecord_Ext addr]) ++ dRecord where 
@@ -114,7 +112,7 @@ serializeRecord (Just record) = prefix_record++checksum++"\n" where
         prefix_record = ":"++len++address++rectype++dataArr
         len = int_2_hexstr_padding 2 $ length $ ihexData record
         rectype = int_2_hexstr_padding 2 $ ihexRecordType record
-        dataArr = concat $ quickmap (\x -> int_2_hexstr_padding 2 x) $ ihexData record
+        dataArr = concat $ map (\x -> int_2_hexstr_padding 2 (fromIntegral x)) $ ihexData record
         address = case ihexRecordType record of
             0->int_2_hexstr_padding 4 $ihexAddress record
             2->int_2_hexstr_padding 4 0

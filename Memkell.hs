@@ -4,18 +4,21 @@ import Data.Bool
 import Data.Maybe (catMaybes)
 import Data.Maybe (listToMaybe)
 import Data.List (unfoldr)
+import Data.List (sortBy)
 import Bitkell
+import Data.Word
 
 -- Mem section 
 data MemSect = MemSect {
     addr :: Int,        -- The starting address of the memory section
-    byteArr :: [Int]    -- The array for the memory section
+    byteArr :: [Word8]    -- The array for the memory section
 } deriving(Show)
 
 -- The second argument is the total byte after padding from the start address
 padVal = 0xFF
 
-padArray size = map (\x -> x * 0 + padVal) [1..size] 
+padArray:: Int -> [Word8]
+padArray size = map (\x -> fromIntegral (x * 0 + padVal)) [1..size] 
 
 getMemsecLen :: Maybe MemSect -> Int
 
@@ -165,6 +168,16 @@ splitAlign bits (Just x) = do
     if (getStartAddr (Just x) ) <&&&> alignMaskLow > 0
         then [takeUntil nextAlignedAddr (Just x)]  ++ Memkell.split chunkSize (Memkell.dropUntil nextAlignedAddr (Just x))
         else Memkell.split chunkSize (Just x)
-    
+
+compare:: Maybe MemSect -> Maybe MemSect -> Ordering
+
+compare Nothing Nothing = EQ
+compare Nothing (Just x) = LT
+compare (Just x) Nothing = GT
+
+compare (Just x) (Just y) = Prelude.compare (getStartAddr (Just x)) (getStartAddr (Just y))
 
 
+sort:: [Maybe MemSect] -> [Maybe MemSect]
+
+sort xs = sortBy Memkell.compare  xs
