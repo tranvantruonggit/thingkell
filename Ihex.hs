@@ -114,7 +114,7 @@ serializeRecord (Just record) = prefix_record++checksum++"\n" where
         prefix_record = ":"++len++address++rectype++dataArr
         len = int_2_hexstr_padding 2 $ length $ ihexData record
         rectype = int_2_hexstr_padding 2 $ ihexRecordType record
-        dataArr = foldl (++) [] $ quickmap (\x -> int_2_hexstr_padding 2 x) $ ihexData record
+        dataArr = concat $ quickmap (\x -> int_2_hexstr_padding 2 x) $ ihexData record
         address = case ihexRecordType record of
             0->int_2_hexstr_padding 4 $ihexAddress record
             2->int_2_hexstr_padding 4 0
@@ -128,5 +128,5 @@ mem2Hex :: Maybe MemSect -> String
 
 mem2Hex Nothing = []
 
-mem2Hex (Just sect) = foldl (++) [] $ map (optimizedMemSect2Hex) $ splitAlign 16 $ Just sect
+mem2Hex (Just sect) = concat $ map (optimizedMemSect2Hex) $ splitAlign 16 $ Just sect
 
