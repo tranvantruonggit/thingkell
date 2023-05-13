@@ -2,6 +2,7 @@ module Ihex where
 import Memkell
 import Data.Maybe (catMaybes)
 import Data.Maybe (fromJust)
+import Control.Monad     (join)
 import Data.List.Split
 import Control.Monad
 import Numeric (readHex)
@@ -118,13 +119,47 @@ serializeRecord (Just record) = prefix_record++checksum++"\n" where
             2->int_2_hexstr_padding 4 0
             4->int_2_hexstr_padding 4 0
         -- split the prefix record into list of u8 list, then sum all the value. The checksum is the 2's complement of the checksum'
-        checksum' = foldl (+) 0 $ hexs_2_u8list $tail prefix_record
+        checksum' = sum $ hexs_2_u8list $tail prefix_record
         checksum =  int_2_hexstr_padding 2 $ (0-checksum') <&&&> 0xFF
 
 -- Function that convert the memory section in to segment of hex records
 mem2Hex :: Maybe MemSect -> String
 
 mem2Hex Nothing = []
+mem2Hex (Just sect) = concat $ map optimizedMemSect2Hex $ splitAlign 16 $ Just sect
 
-mem2Hex (Just sect) = concat $ map (optimizedMemSect2Hex) $ splitAlign 16 $ Just sect
+-- | Function to tak ethe whole Word8 array (including the unchecked checksum) and return true if the check sum are correct, otherwise return False
+verifyChecksumWord8Arr::[Word8] -> Bool
+verifyChecksumWord8Arr [] = False
+-- The follownging function return true only if the sum of all value is zero in u8 field
+verifyChecksumWord8Arr (xs) = 0 == sum xs
+
+
+int2Word8:: Integer -> Word8
+int2Word8 n = fromIntegral n:: Word8
+
+-- Function to convert hexline to tupple of member of hex record
+parseHexLine :: String -> Maybe (Int, Int, Int, [Word8])
+parseHexLine line = case line of
+  ':':hexStr->
+    case hexs_2_u8list hexStr of 
+        (byteCount : addressHi : addressLo : recordType : restofline ) -> do
+            let len =  byteCount
+            let addr = (addressHi <<<> 8) <|||> (addressLo)
+            let recType =  recordType
+            let dataStr = Prelude.take (len) $ Prelude.drop 4 $ hexs_2_u8list hexStr
+            let dataBytes = map (fromIntegral) $ dataStr
+           -- let hexChecksum = checksum
+            guard $ verifyChecksumWord8Arr $ map (fromIntegral ) (hexs_2_u8list hexStr)
+            return  (len, addr, recType, dataBytes)
+  _ -> Nothing  
+
+hexline2record :: String -> Maybe IntelHexRecord
+
+hexline2record line = do
+    (len, addr, recordType, dataBytes) <- parseHexLine line
+    case recordType of 
+        0->  makeIntelHexRecord addr dataBytes recordType >>= return
+        _ -> Nothing
+
 

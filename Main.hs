@@ -26,6 +26,7 @@ time a = do
     printf "Computation time: %0.3f sec\n" (diff :: Double)
     return v
 
+
 main = do
    --let testdata = map ((<&&&>) 0xff) [0..0x1FFE]
    let testdata = map ((<&&&>) 0xff) [0..0x1FFFFF]
@@ -51,7 +52,7 @@ main = do
    let x1 = Just MemSect {addr = 0x8000, byteArr = [1,2,3,4]}
    let x2 = Just MemSect {addr = 0x8004, byteArr = [0..(0xFFF)]}
    let x3 = Just MemSect {addr = 0x9004, byteArr = [1..65536]}
-   let x4 = MemSect {addr = 0x12347FFE , byteArr = map ( \x -> fromIntegral(x <&&&>  0xFF)) [1..(10000000)]}
+   let x4 = MemSect {addr = 0x12347FFE , byteArr = map ( \x -> fromIntegral(x <&&&>  0xFF)) [1..(1000000)]}
    --print x4
    print $ isPerfectMemsectPair (Nothing,Nothing)
    print $ isPerfectMemsectPair (x1,x2)
@@ -81,4 +82,6 @@ main = do
    print $ "End writting file"
    
    print $ sort [x2, x3, x1]
+   
+   print $ hexline2record $ ":10B77000737475767778797A7B7C7D7E7F80818221"
    

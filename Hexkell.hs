@@ -1,5 +1,6 @@
 module Hexkell where
 import Bitkell
+import Data.List.Split
 
 -- Lookup table to convert the nibble to hex value viewed by character
 int_2_hexstr 0 = "0"
@@ -67,9 +68,9 @@ hexs_2_u8 (x:y:xs) = hexs_2_int (x:[y])
 -- This function slit long string into series of 2-char string.
 hexsplit::[Char] -> [[Char]]
 
-hexsplit [] = []
-hexsplit (x:y:xs)  = [[x]++[y]]++ hexsplit xs
-hexsplit (x:[])  = [[x]++"0"]
+hexsplit = chunksOf  2
+
+hexs_2_u8list:: [Char] -> [Int]
 hexs_2_u8list = map hexs_2_u8 . hexsplit
 
 -- Function to convert the hex
