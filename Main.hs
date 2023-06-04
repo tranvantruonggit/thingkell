@@ -50,7 +50,7 @@ main = do
    print $ Memkell.split 3  orig
    print $ "Check is there mem hold"
    let x1 = Just MemSect {addr = 0x8000, byteArr = [1,2,3,4]}
-   let x2 = Just MemSect {addr = 0x8004, byteArr = [0..(0xFFF)]}
+   let x2 = Just MemSect {addr = 0x8004, byteArr = [0..(4)]}
    let x3 = Just MemSect {addr = 0x9004, byteArr = [1..65536]}
    let x4 = MemSect {addr = 0x12347FFE , byteArr = map ( \x -> fromIntegral(x <&&&>  0xFF)) [1..(1000000)]}
    --print x4
@@ -73,6 +73,10 @@ main = do
    let str1 = map serializeRecord $ concat $ map (recordFromMemSect) ( splitAlign 16 (Just x4))
    let str2 =  foldl (++) [] str1
    let str3 = mem2Hex $ Just x4
+   let str5 = mem2Hex $ x1
+   let str6 = mem2Hex $ x2
+   print $ str5
+   print $ str6
    
    --time $ print str3
    --putStr str2
@@ -82,6 +86,9 @@ main = do
    print $ "End writting file"
    
    print $ sort [x2, x3, x1]
+   let str_arr = [":020000040000FA",":048000000102030472",":0580040000010203046D"]
    
    print $ hexline2record $ ":10B77000737475767778797A7B7C7D7E7F80818221"
-   
+   let list_mem_sect_1 = map hexline2record $ str_arr
+   print $ list_mem_sect_1
+   print $ collectAndMerge2Memsect $ catMaybes list_mem_sect_1

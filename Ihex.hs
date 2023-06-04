@@ -90,7 +90,7 @@ recordFromMemSect_elem base (Just sect) = if getMemsecLen (Just sect) <= 16
                                             then makeIntelHexRecord (getStartAddr (Just sect) - base    ) (byteArr sect) 0
                                             else error "error from recordFromMemSect_elem"
 
--- Function to parse the record to the intex hex record
+-- | Function to parse the record to the intex hex record. It basically create the series of hex record, which the first hex record is the extended record (record number 4) to hold the base addres for the whole block.
 recordFromMemSect:: Maybe MemSect -> [Maybe IntelHexRecord]
 recordFromMemSect Nothing = []
 recordFromMemSect (Just sect) = [ext]++ dataArr where
@@ -98,6 +98,7 @@ recordFromMemSect (Just sect) = [ext]++ dataArr where
     dataArr = map (\x -> recordFromMemSect_elem baseAddr x) $ splitAlign 4 $ Just sect
     baseAddr = getStartAddr (Just sect) <&&&> 0xFFFF0000
     
+-- | Function to convert the MemSect to String of hex records
 optimizedMemSect2Hex :: Maybe MemSect -> String
 optimizedMemSect2Hex Nothing = []
 optimizedMemSect2Hex (Just sect) = ext++ (concat dataArr) where
@@ -122,7 +123,7 @@ serializeRecord (Just record) = prefix_record++checksum++"\n" where
         checksum' = sum $ hexs_2_u8list $tail prefix_record
         checksum =  int_2_hexstr_padding 2 $ (0-checksum') <&&&> 0xFF
 
--- Function that convert the memory section in to segment of hex records
+-- | Function that convert the memory section in to segment of hex records, the important thing of this function is that it split the memory section into the smallel chunks of aligned memory segment upto the defined bit (in this case, it is 16 bit) because the intel hex format we are working support upto 16 bit individual addressing in the data hex record type 0.
 mem2Hex :: Maybe MemSect -> String
 
 mem2Hex Nothing = []
@@ -160,6 +161,30 @@ hexline2record line = do
     (len, addr, recordType, dataBytes) <- parseHexLine line
     case recordType of 
         0->  makeIntelHexRecord addr dataBytes recordType >>= return
+        4->  makeIntelHexRecord_Ext addr >>= return
         _ -> Nothing
+
+isOverlap_elem :: IntelHexRecord -> IntelHexRecord -> Maybe Bool
+isOverlap_elem a b = case ((ihexRecordType a ) , (ihexRecordType b)) of
+                            (0,0) -> Just ( ((ihexAddress  a )+ length (ihexData a)) == (ihexAddress b))
+                            _     -> Nothing
+
+-- isOverlap :: [IntelHexRecord] -> Maybe Bool
+-- Above function will be implemented later, for now, just assumed all the input hex file is not overlap
+
+-- Function to take the array of Intel hex record, which is led by an extendend linear record. The process to create the list of MemSect for futher procsessing
+collectAndMerge2Memsect:: [IntelHexRecord] -> [Maybe MemSect]
+collectAndMerge2Memsect [] = []
+collectAndMerge2Memsect (x:xs) = map (\i ->Just ( MemSect {addr = ((getLinearAddress x) <<<> 16) + (ihexAddress i), byteArr = (ihexData i)} )) xs
+
+
+word8ToInt :: Word8 -> Int
+word8ToInt w = fromIntegral w
+
+
+-- FUnction to get address from the extende linear address record (record type = 4)
+getLinearAddress:: IntelHexRecord -> Int
+getLinearAddress record = ( ((word8ToInt (dataArray!!0)) <<<> 24) <|||>  ((word8ToInt (dataArray!!1))<<<>16) )
+                        where dataArray = ihexData record
 
 
