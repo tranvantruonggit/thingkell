@@ -1,5 +1,6 @@
 module Hexkell where
 import Bitkell
+import Data.List.Split
 
 -- Lookup table to convert the nibble to hex value viewed by character
 int_2_hexstr 0 = "0"
@@ -21,6 +22,16 @@ int_2_hexstr 15 = "F"
 
 -- convert integer number to hex string
 int_2_hexstr n = (int_2_hexstr  (div n 16)) ++ (int_2_hexstr (mod n 16))
+
+int_2_hexstr_padding':: Int -> Int -> String
+
+int_2_hexstr_padding' n 0 = int_2_hexstr n
+
+int_2_hexstr_padding' n leading = "0" ++ int_2_hexstr_padding' n (leading - 1)
+
+int_2_hexstr_padding leading n  = if leading >= (length $ int_2_hexstr n)
+                                    then int_2_hexstr_padding' n (leading - (length $ int_2_hexstr n))
+                                    else int_2_hexstr n
 
 -- Convert hex number to uintX number
 hexch_2_u8 :: Char -> Int
@@ -57,8 +68,9 @@ hexs_2_u8 (x:y:xs) = hexs_2_int (x:[y])
 -- This function slit long string into series of 2-char string.
 hexsplit::[Char] -> [[Char]]
 
-hexsplit [] = []
-hexsplit (x:y:xs)  = [[x]++[y]]++ hexsplit xs
-hexsplit (x:[])  = [[x]++"0"]
+hexsplit = chunksOf  2
+
+hexs_2_u8list:: [Char] -> [Int]
 hexs_2_u8list = map hexs_2_u8 . hexsplit
 
+-- Function to convert the hex
