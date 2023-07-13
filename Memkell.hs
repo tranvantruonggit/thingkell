@@ -4,6 +4,7 @@ import Data.Bool
 import Data.Maybe (catMaybes)
 import Data.Maybe (listToMaybe)
 import Data.List (unfoldr)
+import Data.List (groupBy)
 import Data.List (sortBy)
 import Bitkell
 import Data.Word
@@ -138,6 +139,7 @@ split n Nothing = []
 split n (Just sect) = chunksOfMem n (Just sect)
 
 
+-- | Function to check if 2 pair of the memsect is perfect, in the meaning that their data can form an contigous memory section
 isPerfectMemsectPair :: (Maybe MemSect, Maybe MemSect)-> Bool
 isPerfectMemsectPair (Nothing,_) = True
 isPerfectMemsectPair (_,Nothing) = True
@@ -153,13 +155,10 @@ isPerfectMemSectArr xs = foldr (\pair acc -> isPerfectMemsectPair pair && acc) T
         pairs :: [a] -> [(a,a)]
         pairs xs = zip xs (tail xs)
 
--- Function to split the memory section into the array of perfectly aligned memory section, filling all the mem holes, the first argument is the number of bit to be align
+-- | Function to split the memory section into the array of perfectly aligned memory section, filling all the mem holes, the first argument is the number of bit to be align
 splitAlign:: Int -> Maybe MemSect -> [Maybe MemSect]
-
 splitAlign  _ Nothing = []
-
 splitAlign 0 (Just x) = [Just x]
-
 splitAlign bits (Just x) = do 
     let alignMaskLow = (1 <<<> bits) - 1
         alignMaskHigh = 0xFFFFFFFF - alignMaskLow
@@ -169,15 +168,28 @@ splitAlign bits (Just x) = do
         then [takeUntil nextAlignedAddr (Just x)]  ++ Memkell.split chunkSize (Memkell.dropUntil nextAlignedAddr (Just x))
         else Memkell.split chunkSize (Just x)
 
+-- | Function to compare 2 memsect if their are precedence or subsequence each orther, it will be used for sorting algorithm
 compare:: Maybe MemSect -> Maybe MemSect -> Ordering
-
 compare Nothing Nothing = EQ
 compare Nothing (Just x) = LT
 compare (Just x) Nothing = GT
-
 compare (Just x) (Just y) = Prelude.compare (getStartAddr (Just x)) (getStartAddr (Just y))
 
-
+-- | Function to short a list of memory section base on their lead address 
 sort:: [Maybe MemSect] -> [Maybe MemSect]
-
 sort xs = sortBy Memkell.compare  xs
+
+-- | Function to merge multiple Memory Section in to one big memory section 
+swallow:: [Maybe MemSect] -> Maybe MemSect
+swallow [] = Nothing
+swallow (x:xs) = foldl concatSect x xs
+
+test_a = [1, 0 , 0, 1, 0, 1, 0,0,0]
+
+
+prefunc _ 1 = False
+
+prefunc _ 0 = True
+
+test_b = groupBy prefunc test_a
+
