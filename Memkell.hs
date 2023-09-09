@@ -149,14 +149,17 @@ isPerfectMemSectArr xs = foldr (\pair acc -> isPerfectMemsectPair pair && acc) T
 -- | Function to split the memory section into the array of perfectly aligned memory section, filling all the mem holes, the first argument is the number of bit to be align
 splitAlign:: Int -> MemSect -> Maybe [MemSect]
 splitAlign 0 x = Just [x]
-splitAlign bits x = do 
-    let alignMaskLow = (1 <<<> bits) - 1
-        alignMaskHigh = 0xFFFFFFFF - alignMaskLow
+splitAlign bits x 
+    |  (getStartAddr (x) ) <&&&> alignMaskLow > 0 = do
+        let alignMaskHigh = 0xFFFFFFFF - alignMaskLow
+        let nextAlignedAddr = getStartAddr (x) + (chunkSize - (alignMaskLow <&&&> getStartAddr (x)))
+        taken <- takeUntil nextAlignedAddr x
+        remaining <- (Memkell.dropUntil nextAlignedAddr x) >>= Memkell.split chunkSize 
+        return (taken:remaining)
+    | otherwise = Memkell.split chunkSize (x) >>= return
+    where 
+        alignMaskLow = (1 <<<> bits) - 1
         chunkSize = alignMaskLow + 1
-        nextAlignedAddr = getStartAddr (x) + (chunkSize - (alignMaskLow <&&&> getStartAddr (x)))
-    if (getStartAddr (x) ) <&&&> alignMaskLow > 0
-        then (takeUntil nextAlignedAddr x): ((Memkell.dropUntil nextAlignedAddr x) >>= Memkell.split chunkSize )
-        else Memkell.split chunkSize (x) >>= return
 
 -- | Function to compare 2 memsect if their are precedence or subsequence each orther, it will be used for sorting algorithm
 compare:: MemSect -> MemSect -> Ordering
