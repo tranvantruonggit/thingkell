@@ -63,7 +63,7 @@ concatSect sect1 sect2 = if (addr sect1) >(addr sect2)
 
 -- function that take the memory untill the specific address
 takeUntil:: Int ->  MemSect -> Maybe MemSect
-takeUntil nextAddr Just sect = Memkell.take (nextAddr - getStartAddr sect) (sect)
+takeUntil nextAddr  sect = Memkell.take (nextAddr - getStartAddr sect) (sect)
 
 dropUntil :: Int -> MemSect -> Maybe MemSect
 dropUntil nextAddr sect = Memkell.drop (nextAddr - getStartAddr sect) sect
@@ -86,21 +86,28 @@ drop n sect = if n <= getMemsecLen sect
 -- Function that reduce the Memsect that is empty into nothing
 reduceSect:: MemSect -> Maybe MemSect
 
-reduceSect sect = if 0 == getMemsecLen (Just sect)
+reduceSect sect = if 0 == getMemsecLen (sect)
                     then Nothing
                     else Just sect
 
 -- function to slit the mem into small section of n byte
-split2block' :: Int->  MemSect -> [Maybe MemSect]
+split2block' :: Int->  MemSect -> Maybe [MemSect]
 
-split2block' n sect = if 0 == getMemsecLen sect 
-                        then []
-                      else [Memkell.take n sect] ++ [(Memkell.drop n (sect))>>=reduceSect]
-
-split2blocks :: [ MemSect] -> [Maybe MemSect]
-split2blocks []  = []
-split2blocks (x:[]) = [x]
-split2blocks (x:xs) = [x]++ (split2block' n (last ( xs))) where 
+split2block' n sect = if 0 == getMemsecLen sect
+                        then Just []
+                      else do
+                        let taken = Memkell.take n sect -- Take n byte from the memsect and convert it to the head memsect 
+                        let remaining = (Memkell.drop n (sect))>>=reduceSect -- Take the remaining of data and continue the process 
+                        rest <- split2block' n <$> remaining -- This line is where the "continue process" happen
+                        case (taken,rest) of
+                            (Just t, Just r) -> return (t:r)
+                            _ -> Nothing
+-- | This function take the first MemSect as an example, it take the datalength from it and cut the rest of the memsect in to smaller pieces,
+split2blocks :: [MemSect] -> Maybe [MemSect]
+split2blocks []  = Nothing
+split2blocks [x] = Just [x]
+-- split2blocks [x,y] = [x] ++
+split2blocks (x:xs) =  split2block' n (last ( xs)) >>= \ys -> return(x:ys) where 
                         n =  getMemsecLen  x 
 
 -- | function to split the Memory section in to the chunk of memory with the size specify by the first argument of the function.
