@@ -75,8 +75,8 @@ main = do
    let str3 =  mem2Hex  x4
    let str5 = mem2Hex $ x1
    let str6 = mem2Hex $ x2
-   print $ str5
-   print $ str6
+   -- print $ str5
+   -- print $ str6
    
    --time $ print str3
    --putStr str2
@@ -90,9 +90,9 @@ main = do
    
    print $ hexline2record $ ":10B77000737475767778797A7B7C7D7E7F80818221"
    let list_mem_sect_1 = map hexline2record $ str_arr
+   print $ "Hello"
    print $ list_mem_sect_1
-   --print $ swallow.collectAndMerge2Memsect $ catMaybes list_mem_sect_1
-   print $ test_b
+   print $ hexChunks2MemSect $ catMaybes list_mem_sect_1
    let test_input_hex_file_content = str3
    --let list_hex_rec = hexline2record test_input_hex_file_content
    

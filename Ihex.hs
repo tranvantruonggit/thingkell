@@ -180,10 +180,6 @@ isOverlap_elem a b = case ((ihexRecordType a ) , (ihexRecordType b)) of
 -- isOverlap :: [IntelHexRecord] -> Maybe Bool
 -- Above function will be implemented later, for now, just assumed all the input hex file is not overlap
 
--- Function to take the array of Intel hex record, which is led by an extendend linear record. The process to create the list of MemSect for futher procsessing
-collectAndMerge2Memsect:: [IntelHexRecord] -> [Maybe MemSect]
-collectAndMerge2Memsect [] = []
-collectAndMerge2Memsect (x:xs) = map (\i ->Just ( MemSect {addr = ((getLinearAddress x) <<<> 16) + (ihexAddress i), byteArr = (ihexData i)} )) xs
 
 
 word8ToInt :: Word8 -> Int
@@ -200,7 +196,19 @@ predIhexRecords:: IntelHexRecord -> IntelHexRecord -> Bool
 predIhexRecords _ x = (ihexRecordType x) == 0
 
 -- | Function to group the array of Inhex Hex Records to array of hex records segments
-groupbySegment:: [Maybe IntelHexRecord] -> [[IntelHexRecord]]
-groupbySegment arr = groupBy predIhexRecords $ catMaybes arr
+groupbySegment:: [IntelHexRecord] -> [[IntelHexRecord]]
+groupbySegment arr = groupBy predIhexRecords $ arr
 
--- | 
+-- Function to take the array of Intel hex record, which is led by an extendend linear record. The process to create the list of MemSect for futher procsessing
+collectAndMerge2Memsect:: [IntelHexRecord] -> [Maybe MemSect]
+collectAndMerge2Memsect [] = []
+collectAndMerge2Memsect (x:xs) = map (\i ->Just ( MemSect {addr = ((getLinearAddress x) <<<> 16) + (ihexAddress i), byteArr = (ihexData i)} )) xs
+
+-- | Function to convert hex record chunks into Memory Section
+hexChunks2MemSect::[IntelHexRecord] -> Maybe MemSect
+hexChunks2MemSect xs = do
+    let hexSegments = groupbySegment xs -- Hex Segments is the array of (hey array that is led by a extended record)
+    let memSegs = fmap (collectAndMerge2Memsect) hexSegments -- after this, we will have the list of [[Maybe MecSect]]
+    let flattenMemSectNested = concat ( map catMaybes memSegs)
+    return =<< swallow flattenMemSectNested
+    

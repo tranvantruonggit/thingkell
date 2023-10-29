@@ -54,7 +54,8 @@ perfectConcatSect sect1 sect2 = if (getNextAddr sect1) == (addr sect2)
                                                     }
                                 else Nothing
 
--- function to concatenate 2 memsection into one
+-- function to concatenate 2 memsection into one. This function take 2 memory section, the first memory section should
+-- have the lower address, then the first section is padded untill it hit the start address of the second memory section.
 concatSect :: MemSect -> MemSect -> Maybe MemSect
 
 concatSect sect1 sect2 = if (addr sect1) >(addr sect2)
@@ -173,13 +174,3 @@ sort xs = sortBy Memkell.compare  xs
 swallow:: [MemSect] -> Maybe MemSect
 swallow [] = Nothing
 swallow (x:xs) = foldM concatSect x xs
-
-test_a = [1, 0 , 0, 1, 0, 1, 0,0,0]
-
-
-prefunc _ 1 = False
-
-prefunc _ 0 = True
-
-test_b = groupBy prefunc test_a
-
