@@ -23,11 +23,13 @@ executable thingkell
                       split,
                       parallel,
                       bytestring,
-                      attoparsec
-  hs-source-dirs: ./
-  C-sources: bit_utils.c
+                      attoparsec,
+                      optparse-applicative
+  hs-source-dirs: ./src
+  -- extra-source-file: src/bit_utils.c
+  --C-sources-dirs: ./src
+  C-sources: src/bit_utils.c
   Includes: bit_utils.h
-  Include-dirs: ./
+  Include-dirs: ./src
   Install-includes: bit_utils.h
   default-language:    Haskell2010
-  build-dir: ./build
