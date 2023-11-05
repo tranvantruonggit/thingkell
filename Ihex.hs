@@ -16,7 +16,6 @@ import Bitkell
 import Data.String
 import Hexkell
 import Control.Parallel.Strategies (using,parMap, rseq,parList,NFData,evalList)
-import Control.Parallel ( pseq)
 import Data.Word
 
 data IntelHexRecord = IntelHexRecord {
@@ -209,6 +208,6 @@ hexChunks2MemSect::[IntelHexRecord] -> Maybe MemSect
 hexChunks2MemSect xs = do
     let hexSegments = groupbySegment xs -- Hex Segments is the array of (hey array that is led by a extended record)
     let memSegs = fmap (collectAndMerge2Memsect) hexSegments -- after this, we will have the list of [[Maybe MecSect]]
-    let flattenMemSectNested = concat ( map catMaybes memSegs)
+    let flattenMemSectNested =concat ( map catMaybes memSegs)
     return =<< swallow flattenMemSectNested
     

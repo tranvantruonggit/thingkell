@@ -174,3 +174,4 @@ sort xs = sortBy Memkell.compare  xs
 swallow:: [MemSect] -> Maybe MemSect
 swallow [] = Nothing
 swallow (x:xs) = foldM concatSect x xs
+
