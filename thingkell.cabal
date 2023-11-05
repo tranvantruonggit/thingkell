@@ -15,11 +15,6 @@ maintainer:          contact@tranvantruong.com
 -- category:
 build-type:          Simple
 extra-source-files:  CHANGELOG.md, README.md, bit_utils.c
-Library bit_utils
-  C-sources: bit_utils.c
-  Include-dirs: ./
-  Includes: bit_utils.h
-  Install-includes: bit_utils.h
 executable thingkell
   main-is:             Main.hs
   other-modules:   Memkell, Bitkell, Crkell, Hexkell, Ihex, Ffi
@@ -30,4 +25,8 @@ executable thingkell
                       bytestring,
                       attoparsec
   hs-source-dirs: ./
+  C-sources: bit_utils.c
+  Includes: bit_utils.h
+  Include-dirs: ./
+  Install-includes: bit_utils.h
   default-language:    Haskell2010
