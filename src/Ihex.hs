@@ -209,12 +209,16 @@ groupbySegment arr = groupBy predIhexRecords $ arr
 -- Function to take the array of Intel hex record, which is led by an extendend linear record. The process to create the list of MemSect for futher procsessing
 collectAndMerge2Memsect:: [IntelHexRecord] -> [Maybe MemSect]
 collectAndMerge2Memsect [] = []
-collectAndMerge2Memsect (x:xs) = map (\i ->Just ( MemSect {addr = ((getLinearAddress x) <<<> 16) + (ihexAddress i), byteArr = (ihexData i)} )) xs
+collectAndMerge2Memsect (x:xs) = map (\i ->  distriAddr x i) xs
+    where 
+        distriAddr:: IntelHexRecord -> IntelHexRecord -> Maybe MemSect
+        distriAddr headRec dataRec = Just MemSect { addr = (ihexAddress headRec) <<<> 16 + (ihexAddress dataRec),
+                                                                    byteArr = ihexData dataRec }
 
 -- | Function to convert hex record chunks into Memory Section
 hexChunks2MemSect::[IntelHexRecord] -> Maybe MemSect
 hexChunks2MemSect xs = do
-    let hexSegments = groupbySegment xs -- Hex Segments is the array of (hey array that is led by a extended record)
+    let hexSegments = groupbySegment xs -- Hex Segments is the array of (the array that is led by a extended record)
     let memSegs = fmap (collectAndMerge2Memsect) hexSegments -- after this, we will have the list of [[Maybe MecSect]]
     let flattenMemSectNested =concat ( map catMaybes memSegs)
     return =<< swallow flattenMemSectNested

@@ -13,5 +13,8 @@ testSuite = testGroup "allTests"
     [
         simpleFunctionTest,
         test_ihex_parse_short_data,
-        test_iHex2HexRecards
+        test_iHex2HexRecards,
+        test_iHex2HexRecards_TC2,
+        test_CollectAndMergeMemSect,
+        test_ihex2MemSect
     ]
