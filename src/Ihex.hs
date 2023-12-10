@@ -41,6 +41,13 @@ makeIntelHexRecord addr dat rtype = Just IntelHexRecord {
     ihexRecordType = rtype
 }
 
+makeIntelHexRecord_EOF :: Maybe IntelHexRecord
+makeIntelHexRecord_EOF = Just IntelHexRecord {
+    ihexAddress = 0,
+    ihexData = [],
+    ihexRecordType = 1
+}
+
 -- provide the full address, but take only 16 MSBs of the address
 makeIntelHexRecord_Ext :: Int -> Maybe IntelHexRecord
 makeIntelHexRecord_Ext addr = Just IntelHexRecord{
@@ -168,6 +175,7 @@ hexline2record line = do
     (len, addr, recordType, dataBytes) <- parseHexLine line
     case recordType of 
         0->  makeIntelHexRecord addr dataBytes recordType >>= return
+        1->  makeIntelHexRecord_EOF >>= return
         4->  makeIntelHexRecord_Ext addr >>= return
         _ -> Nothing
 
