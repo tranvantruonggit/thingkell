@@ -54,7 +54,10 @@ test-suite HexTest
                       tasty,
                       tasty-hunit
   default-language: Haskell2010
+  C-sources: src/bit_utils.c
+  Includes: src/bit_utils.h
   other-modules:   Memkell, 
+                  HexTest,
                   Bitkell, 
                   Crkell, 
                   Hexkell, 
