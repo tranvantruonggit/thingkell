@@ -13,7 +13,7 @@ import Hexkell
 readHexFileLines :: FilePath ->IO [String]
 readHexFileLines filePath = do
     content <- readFile filePath
-    return (lines content)
+    return $ map (filter (/= '\r')) (lines content)
 
 
 -- | This function convert file into list of hex record, by leveraging the readHexFileLines
