@@ -6,6 +6,7 @@ import Data.Maybe (listToMaybe)
 import Data.List (unfoldr)
 import Data.List (groupBy)
 import Data.List (sortBy)
+import Data.Sequence (Seq, (><), singleton, fromList, Seq(Empty), take,drop, splitAt)
 import Control.Monad (foldM)
 import Bitkell
 import Data.Word
@@ -13,14 +14,20 @@ import Data.Word
 -- Mem section 
 data MemSect = MemSect {
     addr :: Int,        -- The starting address of the memory section
-    byteArr :: [Word8]    -- The array for the memory section
-} deriving(Show)
+    byteArr :: Seq Word8    -- The array for the memory section
+} 
+
+emptyMemSect = MemSect 0 Empty
+
+instance Show MemSect where
+  show (MemSect addr byteArr) = "[MemSect start at " ++ show addr ++ " and size of data is " ++ show (length byteArr) ++""
+
 
 -- The second argument is the total byte after padding from the start address
 padVal = 0xFF
 
-padArray:: Int -> [Word8]
-padArray size = map (\x -> fromIntegral (x * 0 + padVal)) [1..size] 
+padArray:: Int -> Seq Word8
+padArray size = fromList $ map (\x -> fromIntegral (x * 0 + padVal)) [1..size] 
 
 -- | Function to get the memory section length
 getMemsecLen :: MemSect -> Int
@@ -35,7 +42,7 @@ padMem :: MemSect -> Int -> Maybe MemSect
 padMem section expanded = if (getMemsecLen (section)) >  expanded
                                     then Just section
                                     else Just MemSect { addr = addr section,
-                                           byteArr = (byteArr section) ++ ( padArray  $ expanded - length (byteArr section))
+                                           byteArr = (byteArr section) >< ( padArray  $ expanded - length (byteArr section))
                                            }
 -- Padding until next address (excluded the next addr)
 padMemUntil :: MemSect -> Int -> Maybe MemSect
@@ -50,7 +57,7 @@ perfectConcatSect :: MemSect -> MemSect -> Maybe MemSect
 
 perfectConcatSect sect1 sect2 = if (getNextAddr sect1) == (addr sect2)
                                 then Just MemSect { addr = addr sect1,
-                                                    byteArr = (byteArr sect1) ++ (byteArr sect2)
+                                                    byteArr = (byteArr sect1) >< (byteArr sect2)
                                                     }
                                 else Nothing
 
@@ -73,16 +80,16 @@ dropUntil nextAddr sect = Memkell.drop (nextAddr - getStartAddr sect) sect
 take :: Int ->  MemSect -> Maybe MemSect
 take n sect = if (n<= getMemsecLen (sect))
                     then (Just MemSect { addr = addr sect,
-                                        byteArr = Prelude.take n (byteArr sect) }) 
+                                        byteArr = Data.Sequence.take n (byteArr sect) }) 
                     else (Just sect) 
 
 -- Function to remove the first n byte from memory section
 drop :: Int -> MemSect -> Maybe MemSect
 drop n sect = if n <= getMemsecLen sect
                 then Just MemSect { addr = n + addr sect,
-                                    byteArr = Prelude.drop n (byteArr sect) }
+                                    byteArr = Data.Sequence.drop n (byteArr sect) }
                 else Just MemSect { addr = n + addr sect,
-                                    byteArr = [] }
+                                    byteArr = Empty }
 
 -- Function that reduce the Memsect that is empty into nothing
 reduceSect:: MemSect -> Maybe MemSect
@@ -123,9 +130,9 @@ chunksOfMem n (MemSect addr byteArr)
         then Just $ zipWith  MemSect  chunkAddrs chunkData
         else Nothing
 -- | Function to split the array into a tupple, where the first element is the head, and the second is the tail of the array
-splitAtMaybe :: Int -> [a] -> Maybe ([a], [a])
-splitAtMaybe _ [] = Nothing
-splitAtMaybe n xs = Just $ splitAt n xs
+splitAtMaybe :: Int -> Seq a -> Maybe (Seq a, Seq a)
+splitAtMaybe _ Empty = Nothing
+splitAtMaybe n xs = Just $ Data.Sequence.splitAt n xs
 
 
 -- FUnction to slit the memmory section into smaller section of n bytes
@@ -174,4 +181,10 @@ sort xs = sortBy Memkell.compare  xs
 swallow:: [MemSect] -> Maybe MemSect
 swallow [] = Nothing
 swallow (x:xs) = foldM concatSect x xs
+
+-- | Function to swallow data in to Memsect
+swallow_data :: MemSect -> [Word8] -> Maybe MemSect
+swallow_data mem [] = Just mem
+swallow_data mem byteAddArr = Just (MemSect {addr = addr mem, byteArr = (byteArr mem) >< (fromList byteAddArr)})
+
 

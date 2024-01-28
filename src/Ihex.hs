@@ -5,6 +5,7 @@ import Data.Maybe (fromJust)
 import Data.Maybe (fromMaybe)
 import Control.Monad     (join)
 import Data.List.Split
+import Data.Foldable
 import Data.List    (groupBy)
 import Control.Monad
 import Numeric (readHex)
@@ -13,10 +14,18 @@ import Data.ByteString.Char8 (ByteString, pack)
 import Data.Attoparsec.ByteString.Char8 (Parser, parseOnly, char, count, hexadecimal)
 import qualified Data.ByteString.Char8 as BS    
 import Bitkell
+import Data.Sequence (Seq,fromList,length)
 import Data.String
 import Hexkell
 import Control.Parallel.Strategies (using,parMap, rseq,parList,NFData,evalList)
 import Data.Word
+
+iHEX_TYPE_DATA = 0
+iHEX_TYPE_EOF = 1
+iHEX_TYPE_EXT_SEG_ADDR = 2
+iHEX_TYPE_EXT_LINEAR_ADDDR = 4
+iHEX_TYPE_START_SEG_ADDR = 5
+iHEX_TYPE_START_LINEAR_ADDR = 6
 
 data IntelHexRecord = IntelHexRecord {
     ihexAddress :: Int,     -- The starting address of the data
@@ -56,15 +65,6 @@ makeIntelHexRecord_Ext addr = Just IntelHexRecord{
     ihexRecordType = 4
 }
 
-makeListOfRecord ::  Int -> [Word8] -> [IntelHexRecord]
-makeListOfRecord startAddr dataArray = let
-        data_seg =  chunksOf 16 dataArray
-        addr_arr = map (\x -> x*16 +startAddr ) [0..(length data_seg)]
-        zipped_arr = if length (addr_arr) == length (data_seg)
-                        then zip addr_arr data_seg
-                        else []
-    in map (makeDIhexRecord')   zipped_arr
-
 makeDIhexRecord' :: (Int, [Word8]) -> IntelHexRecord
 makeDIhexRecord' (addr, dat) = 
     case makeDIhexRecord addr dat of
@@ -74,12 +74,12 @@ makeDIhexRecord' (addr, dat) =
 -- | Function to make the data hex record
 makeDIhexRecord :: Int->[Word8]-> Maybe IntelHexRecord
 makeDIhexRecord addr dat 
-    | (length dat) <=16 =  makeIntelHexRecord (addr <&&&> 0xFFFF) dat 0
+    | (Prelude.length dat) <=16 =  makeIntelHexRecord (addr <&&&> 0xFFFF) dat 0
     | otherwise  = error "Error in makin data hex record"
 
 makeDIhexRecords :: Int -> [Word8] -> [IntelHexRecord]
 makeDIhexRecords addr dat = 
-    if (length dat) <=16
+    if (Prelude.length dat) <=16
         then [  fromJust (makeIntelHexRecord (addr <&&&> 0xFFFF) dat 0)]
         else [  fromJust  (makeIntelHexRecord (addr <&&&> 0xFFFF) dat 1)]
 
@@ -94,7 +94,7 @@ makeIhexRecords addr dat =
 recordFromMemSect_elem:: Int -> MemSect -> Maybe IntelHexRecord
 
 recordFromMemSect_elem base sect 
-    |  getMemsecLen sect <= 16 = makeIntelHexRecord (getStartAddr sect - base  ) (byteArr sect) 0
+    |  getMemsecLen sect <= 16 = makeIntelHexRecord (getStartAddr sect - base  ) ( Data.Foldable.toList (byteArr sect)) 0
     | otherwise =  Nothing
 
 -- | Function to parse the record to the intex hex record. It basically create the series of hex record, which the first hex record is the extended record (record number 4) to hold the base addres for the whole block.
@@ -119,7 +119,7 @@ optimizedMemSect2Hex sect = do
 serializeRecord:: IntelHexRecord -> Maybe String
 serializeRecord record = Just (prefix_record++checksum++"\n") where
         prefix_record = ":"++len++address++rectype++dataArr
-        len = int_2_hexstr_padding 2 $ length $ ihexData record
+        len = int_2_hexstr_padding 2 $ Prelude.length $ ihexData record
         rectype = int_2_hexstr_padding 2 $ ihexRecordType record
         dataArr = concat $ map (\x -> int_2_hexstr_padding 2 (fromIntegral x)) $ ihexData record
         address = case ihexRecordType record of
@@ -171,6 +171,11 @@ parseHexLine line = case line of
 
 hexline2record :: String -> Maybe IntelHexRecord
 
+hexLineGetAddr :: String -> Maybe Int
+hexLineGetAddr str = do
+    (len, addr, recordType, dataBytes) <- parseHexLine str
+    return addr
+
 hexline2record line = do
     (len, addr, recordType, dataBytes) <- parseHexLine line
     case recordType of 
@@ -181,7 +186,7 @@ hexline2record line = do
 
 isOverlap_elem :: IntelHexRecord -> IntelHexRecord -> Maybe Bool
 isOverlap_elem a b = case ((ihexRecordType a ) , (ihexRecordType b)) of
-                            (0,0) -> Just ( ((ihexAddress  a )+ length (ihexData a)) == (ihexAddress b))
+                            (0,0) -> Just ( ((ihexAddress  a )+ Prelude.length (ihexData a)) == (ihexAddress b))
                             _     -> Nothing
 
 -- isOverlap :: [IntelHexRecord] -> Maybe Bool
@@ -213,7 +218,7 @@ collectAndMerge2Memsect (x:xs) = map (\i ->  distriAddr x i) xs
     where 
         distriAddr:: IntelHexRecord -> IntelHexRecord -> Maybe MemSect
         distriAddr headRec dataRec = Just MemSect { addr = (ihexAddress headRec) <<<> 16 + (ihexAddress dataRec),
-                                                                    byteArr = ihexData dataRec }
+                                                                    byteArr = Data.Sequence.fromList (ihexData dataRec )}
 
 -- | Function to convert hex record chunks into Memory Section
 hexChunks2MemSect::[IntelHexRecord] -> Maybe MemSect
